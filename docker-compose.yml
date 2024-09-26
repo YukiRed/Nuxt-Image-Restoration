@@ -1,0 +1,22 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NVIDIA_VISIBLE_DEVICES=all # Make all GPUs visible inside the container
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility # Limit to only what is needed for CUDA
+    volumes:
+      - .:/app
+      - ./tmp:/app/tmp
+      - ./models:/app/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [ gpu ]
+    runtime: nvidia
+    restart: always

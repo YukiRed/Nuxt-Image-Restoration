@@ -4,3 +4,8 @@ deoldify
 --extra-index-url https://download.pytorch.org/whl/cu124
 torch
 torchvision
+
+matplotlib
+pandas
+scipy
+fastprogress
