@@ -3,6 +3,7 @@ import path from "path";
 import { promises as fs } from "fs";
 import { spawn } from "child_process";
 import { H3Event } from "h3"; // Import H3Event for proper typing in Nuxt 3
+import cron from "node-cron"; // Import node-cron for scheduling tasks
 
 // Set up multer for file upload handling
 const storage = multer.diskStorage({
@@ -15,6 +16,46 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
+
+// Helper function to delete files and directories recursively
+async function deleteFilesRecursively(directory) {
+  const files = await fs.readdir(directory, { withFileTypes: true });
+
+  for (const file of files) {
+    const filePath = path.join(directory, file.name);
+
+    if (file.isDirectory()) {
+      // Recursively delete contents of the directory
+      await deleteFilesRecursively(filePath);
+    } else {
+      // Delete the file
+      await fs.unlink(filePath);
+      console.log(`Deleted file: ${filePath}`);
+    }
+  }
+}
+
+// Schedule a cron job to delete files and directories from the tmp/ directory after midnight
+cron.schedule("0 0 * * *", async () => {
+  console.log("Starting scheduled cleanup of tmp/ directory...");
+
+  const tmpDir = path.join("tmp");
+
+  try {
+    const files = await fs.readdir(tmpDir);
+    if (files.length > 0) {
+      // Delete all files and directories inside tmp/
+      await deleteFilesRecursively(tmpDir);
+      console.log("Cleanup of tmp/ directory completed.");
+    } else {
+      console.log(
+        "No files or directories to delete in tmp/ directory."
+      );
+    }
+  } catch (error) {
+    console.error("Error during tmp/ directory cleanup:", error);
+  }
+});
 
 export default defineEventHandler(async (event) => {
   console.log("Incoming request for file upload...");
